@@ -24,7 +24,11 @@ import org.neodatis.odb.core.query.IQuery;
 import org.neodatis.odb.core.query.criteria.Where;
 import org.neodatis.odb.impl.core.query.criteria.CriteriaQuery;
 import javax.swing.SwingConstants;
-
+/**
+ * 
+ * <h2>Esta clase se encarga del mantenimiento de los datos de departamento, se realizan altas, bajas, modificaciones y consultas.</h2>
+ *
+ */
 @SuppressWarnings("serial")
 public class OperacionesDepart extends JDialog {
 	private static final String BBDD="Empleados.dat";
@@ -33,7 +37,7 @@ public class OperacionesDepart extends JDialog {
 	private JTextField txNombre;
 	private JTextField txPoblacion;
 	private JLabel lblRespuesta;
-
+	
 	public OperacionesDepart() {
 		setTitle("Operaciones departamentos.");
 		setModal(true);
@@ -122,21 +126,7 @@ public class OperacionesDepart extends JDialog {
 				ODB odb=ODBFactory.open(BBDD);
 				
 				try{
-					num=Integer.parseInt(txNumDepart.getText());
-					comprobarNumDepart(odb, num);
-					if(!txNombre.getText().equals("")){
-						if(!txPoblacion.getText().equals("")){
-							nom=txNombre.getText();
-							pob=txPoblacion.getText();
-							odb.store(new Departamento(num,nom,pob));
-							
-							lblRespuesta.setText("Departamento insertado correctamente");
-						}
-						else
-							lblRespuesta.setText("Error, poblacion vacia");
-					}
-					else
-						lblRespuesta.setText("Error, nombre de departamento vacio");
+					insertarDep(odb);
 				}
 				catch(NumberFormatException e){
 					lblRespuesta.setText("Error, numero de departamento erroneo");
@@ -148,6 +138,27 @@ public class OperacionesDepart extends JDialog {
 					odb.close();
 				}
 			}
+
+			public void insertarDep(ODB odb) throws NumDepartDuplicado {
+				int num;
+				String nom;
+				String pob;
+				num=Integer.parseInt(txNumDepart.getText());
+				comprobarNumDepart(odb, num);
+				if(!txNombre.getText().equals("")){
+					if(!txPoblacion.getText().equals("")){
+						nom=txNombre.getText();
+						pob=txPoblacion.getText();
+						odb.store(new Departamento(num,nom,pob));
+						
+						lblRespuesta.setText("Departamento insertado correctamente");
+					}
+					else
+						lblRespuesta.setText("Error, poblacion vacia");
+				}
+				else
+					lblRespuesta.setText("Error, nombre de departamento vacio");
+			}
 		});
 		
 		//Accion boton borrar departamento
@@ -157,22 +168,7 @@ public class OperacionesDepart extends JDialog {
 				ODB odb=ODBFactory.open(BBDD);
 				
 				try{
-					num=Integer.parseInt(txNumDepart.getText());
-					IQuery query=new CriteriaQuery(Departamento.class, Where.equal("dept_no", num));
-					Objects<Departamento> dep=odb.getObjects(query);
-					if(!dep.isEmpty()){
-						IQuery query2=new CriteriaQuery(Empleado.class, 
-								Where.equal("dept.dept_no", dep.getFirst().getDept_no()));
-						Objects<Empleado> emp=odb.getObjects(query2);
-						for(Empleado e:emp){
-							e.setDept(null);
-							odb.store(e);
-						}
-						odb.delete(dep.getFirst());
-						lblRespuesta.setText("Departamento borrado correctamente");
-					}
-					else
-						lblRespuesta.setText("Error, el departamento no existe");
+					borrarDep(odb);
 				}
 				catch(NumberFormatException e){
 					lblRespuesta.setText("Error, numero de departamento erroneo");
@@ -180,6 +176,26 @@ public class OperacionesDepart extends JDialog {
 				finally{
 					odb.close();
 				}
+			}
+
+			public void borrarDep(ODB odb) {
+				int num;
+				num=Integer.parseInt(txNumDepart.getText());
+				IQuery query=new CriteriaQuery(Departamento.class, Where.equal("dept_no", num));
+				Objects<Departamento> dep=odb.getObjects(query);
+				if(!dep.isEmpty()){
+					IQuery query2=new CriteriaQuery(Empleado.class, 
+							Where.equal("dept.dept_no", dep.getFirst().getDept_no()));
+					Objects<Empleado> emp=odb.getObjects(query2);
+					for(Empleado e:emp){
+						e.setDept(null);
+						odb.store(e);
+					}
+					odb.delete(dep.getFirst());
+					lblRespuesta.setText("Departamento borrado correctamente");
+				}
+				else
+					lblRespuesta.setText("Error, el departamento no existe");
 			}
 		});
 		
@@ -190,16 +206,7 @@ public class OperacionesDepart extends JDialog {
 				ODB odb=ODBFactory.open(BBDD);
 				
 				try{
-					num=Integer.parseInt(txNumDepart.getText());
-					IQuery query=new CriteriaQuery(Departamento.class, Where.equal("dept_no", num));
-					Objects<Departamento> dep=odb.getObjects(query);
-					if(!dep.isEmpty()){
-						txNombre.setText(dep.getFirst().getDnombre());
-						txPoblacion.setText(dep.getFirst().getLoc());
-						lblRespuesta.setText("Consulta satisfactoria");
-					}
-					else
-						lblRespuesta.setText("Error, el departamento no existe");
+					consultarDep(odb);
 				}
 				catch(NumberFormatException e){
 					lblRespuesta.setText("Error, numero de departamento erroneo");
@@ -207,6 +214,20 @@ public class OperacionesDepart extends JDialog {
 				finally{
 					odb.close();
 				}
+			}
+
+			public void consultarDep(ODB odb) {
+				int num;
+				num=Integer.parseInt(txNumDepart.getText());
+				IQuery query=new CriteriaQuery(Departamento.class, Where.equal("dept_no", num));
+				Objects<Departamento> dep=odb.getObjects(query);
+				if(!dep.isEmpty()){
+					txNombre.setText(dep.getFirst().getDnombre());
+					txPoblacion.setText(dep.getFirst().getLoc());
+					lblRespuesta.setText("Consulta satisfactoria");
+				}
+				else
+					lblRespuesta.setText("Error, el departamento no existe");
 			}
 		});
 		
@@ -217,27 +238,7 @@ public class OperacionesDepart extends JDialog {
 				ODB odb=ODBFactory.open(BBDD);
 				
 				try{
-					num=Integer.parseInt(txNumDepart.getText());
-					IQuery query=new CriteriaQuery(Departamento.class, Where.equal("dept_no", num));
-					Objects<Departamento> dep=odb.getObjects(query);
-					if(!dep.isEmpty()){
-						if(!txNombre.getText().equals("")){
-							if(!txPoblacion.getText().equals("")){
-								Departamento depar;
-								depar=dep.getFirst();
-								depar.setDnombre(txNombre.getText());
-								depar.setLoc(txPoblacion.getText());
-								odb.store(depar);
-								lblRespuesta.setText("Modifcacion satisfactoria");
-							}
-							else
-								lblRespuesta.setText("Error, poblacion vacia");
-						}
-						else
-							lblRespuesta.setText("Error, nombre de departamento vacio");
-					}
-					else
-						lblRespuesta.setText("Error, el departamento no existe");
+					modificarDep(odb);
 				}
 				catch(NumberFormatException e){
 					lblRespuesta.setText("Error, numero de departamento erroneo");
@@ -246,10 +247,35 @@ public class OperacionesDepart extends JDialog {
 					odb.close();
 				}
 			}
+
+			public void modificarDep(ODB odb) {
+				int num;
+				num=Integer.parseInt(txNumDepart.getText());
+				IQuery query=new CriteriaQuery(Departamento.class, Where.equal("dept_no", num));
+				Objects<Departamento> dep=odb.getObjects(query);
+				if(!dep.isEmpty()){
+					if(!txNombre.getText().equals("")){
+						if(!txPoblacion.getText().equals("")){
+							Departamento depar;
+							depar=dep.getFirst();
+							depar.setDnombre(txNombre.getText());
+							depar.setLoc(txPoblacion.getText());
+							odb.store(depar);
+							lblRespuesta.setText("Modifcacion satisfactoria");
+						}
+						else
+							lblRespuesta.setText("Error, poblacion vacia");
+					}
+					else
+						lblRespuesta.setText("Error, nombre de departamento vacio");
+				}
+				else
+					lblRespuesta.setText("Error, el departamento no existe");
+			}
 		});
 	}
 	
-	private void comprobarNumDepart(ODB odb, int num) throws NumDepartDuplicado{
+	public void comprobarNumDepart(ODB odb, int num) throws NumDepartDuplicado{
 		IQuery query=new CriteriaQuery(Departamento.class, Where.equal("dept_no", num));
 		Objects<Departamento> dep=odb.getObjects(query);
 		
